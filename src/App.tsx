@@ -1,8 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import './App.css'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
-import UserPage from './pages/UserPsge'
+import UserPage from './pages/UserPage'
 import PostDetailPage from './pages/PostDetailPage'
 
 function App() {
