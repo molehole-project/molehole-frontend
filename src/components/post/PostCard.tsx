@@ -49,7 +49,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickAuthor, class
                         <button
                             type="button"
                             onClick={(e) => {
-                                e.stopPropagation(); // 🔥 카드 클릭 막기
+                                e.stopPropagation();
                                 onClickAuthor?.(post.author.userId);
                             }}
                             className="flex min-w-0 items-center gap-2 text-left hover:opacity-80 transition"

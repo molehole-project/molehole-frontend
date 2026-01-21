@@ -16,7 +16,7 @@ export type PostGridProps = {
 const PostGrid: React.FC<PostGridProps> = ({
     posts,
     isLoading,
-    emptyText = "포스트가 없어여",
+    emptyText = "게시글이 없습니다.",
     className,
     gapClassName,
     onClickPost,
