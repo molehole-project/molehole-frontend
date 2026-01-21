@@ -2,6 +2,8 @@ import React, { useMemo, useState } from "react";
 import WidgetStack, { type WidgetConfig } from "../widgets/WidgetStack";
 import type { TodoItem } from "../widgets/todo/WeeklyTodo";
 import type { NowReadingBook } from "../widgets/now-reading/NowReading";
+import PostGrid from "../components/post/PostGrid";
+import type { PostSummary } from "../types/post";
 
 type Tab = "home" | "post";
 
@@ -110,16 +112,8 @@ const UserPage: React.FC = () => {
     [nowReadingBook, today, weekDays, todosByDate, todayTodos, monthDays]
   );
 
-  // ===== render =====
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="px-4 py-2">
-          <h3 className="text-xl font-bold text-gray-900">molehole</h3>
-        </div>
-      </header>
-
+    <div className="">
       {/* User Header Image */}
       <div className="max-w-5xl mx-auto">
         <div className="bg-gray-100 border border-gray-200 h-48 flex items-center justify-center">
@@ -172,7 +166,7 @@ const UserPage: React.FC = () => {
               안녕뿡바구링들아?
             </div>
 
-            {/* Left Widgets OR Category */}
+            {/* Left Area */}
             {activeTab === "home" ? (
               <WidgetStack side="left" widgets={widgets} data={widgetData} />
             ) : (
@@ -182,7 +176,7 @@ const UserPage: React.FC = () => {
             )}
           </div>
 
-          {/* Right Content Area */}
+          {/* Right Area */}
           <div className="col-span-9">
             {/* Tab Navigation */}
             <nav className="mb-4 border-b border-gray-200">
@@ -218,8 +212,7 @@ const UserPage: React.FC = () => {
                 <WidgetStack side="right" widgets={widgets} data={widgetData} />
               ) : (
                 <div className="text-gray-500 text-lg text-center">
-                  <div>post list or</div>
-                  <div>post detail</div>
+                  <PostGrid posts={userPosts as PostSummary[]} gapClassName="gap-4" />
                 </div>
               )}
             </div>
