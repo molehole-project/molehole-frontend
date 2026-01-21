@@ -54,7 +54,7 @@ const PostGrid: React.FC<PostGridProps> = ({
 
   return (
     <div className={className}>
-      <div className={["grid grid-cols-2", gapClassName ?? "gap-4"].join(" ")}>
+      <div className={["grid grid-cols-1 sm:grid-cols-2", gapClassName ?? "gap-4"].join(" ")}>
         {posts.map((p) => (
           <PostCard
             key={p.postId}
