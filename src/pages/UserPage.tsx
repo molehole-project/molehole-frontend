@@ -1,9 +1,21 @@
 import React, { useMemo, useState } from "react";
+
 import WidgetStack, { type WidgetConfig } from "../widgets/WidgetStack";
-import type { TodoItem } from "../widgets/todo/WeeklyTodo";
-import type { NowReadingBook } from "../widgets/now-reading/NowReading";
 import PostGrid from "../components/post/PostGrid";
+import CategoryTree from "../components/category/CategoryTree";
+
+import type { TodoItem } from "../widgets/todo/WeeklyTodo";
 import type { PostSummary } from "../types/post";
+
+import { buildMonthGridDays, buildWeekDays, formatYMD } from "../utils/calendar/date";
+
+import {
+  makeMockTodosByDate,
+  mockNowReadingBook,
+  mockCategories,
+  mockUserPosts,
+} from "../mocks/userPageMock";
+import { ALL_CATEGORY_ID, withAllCategory } from "../features/cetegory/categoryUtils";
 
 type Tab = "home" | "post";
 
@@ -11,80 +23,38 @@ const UserPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const isFollowing = false;
 
-  // ===== helpers =====
-  const pad2 = (n: number) => String(n).padStart(2, "0");
-
-  const startOfMonthGrid = (date: Date) => {
-    const first = new Date(date.getFullYear(), date.getMonth(), 1);
-    const day = first.getDay(); // 0:Sun
-    const start = new Date(first);
-    start.setDate(first.getDate() - day);
-    return start;
-  };
-
-  const endOfMonthGrid = (date: Date) => {
-    const last = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    const day = last.getDay();
-    const end = new Date(last);
-    end.setDate(last.getDate() + (6 - day));
-    return end;
-  };
-
-  const addDays = (date: Date, days: number) => {
-    const d = new Date(date);
-    d.setDate(d.getDate() + days);
-    return d;
-  };
-
-  const formatYMD = (d: Date) =>
-    `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-
-  // ===== data (mock) =====
+  // ===== date base =====
   const today = useMemo(() => new Date(), []);
-  const monthDays = useMemo(() => {
-    const start = startOfMonthGrid(today);
-    const end = endOfMonthGrid(today);
+  const monthDays = useMemo(() => buildMonthGridDays(today), [today]);
+  const weekDays = useMemo(() => buildWeekDays(today), [today]);
 
-    const arr: Date[] = [];
-    for (let d = new Date(start); d <= end; d = addDays(d, 1)) {
-      arr.push(new Date(d));
-    }
-    return arr;
-  }, [today]);
-
-  const weekDays = useMemo(() => {
-    const weekStart = addDays(today, -today.getDay());
-    return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  }, [today]);
-
-  const todosByDate: Record<string, TodoItem[]> = useMemo(() => {
-    const map: Record<string, TodoItem[]> = {
-      [formatYMD(weekDays[1])]: [
-        { id: 1, title: "JWT refresh 버그 잡기", done: false },
-        { id: 2, title: "SSE 알림 UI 연결", done: true },
-      ],
-      [formatYMD(weekDays[2])]: [{ id: 3, title: "카테고리 트리 쿼리 최적화", done: false }],
-      [formatYMD(weekDays[5])]: [
-        { id: 4, title: "포스트 리스트 무한스크롤", done: false },
-        { id: 5, title: "README 업데이트", done: false },
-      ],
-    };
-    return map;
-  }, [weekDays]);
+  // ===== mock data =====
+  const todosByDate: Record<string, TodoItem[]> = useMemo(
+    () => makeMockTodosByDate(weekDays),
+    [weekDays]
+  );
 
   const todayKey = useMemo(() => formatYMD(today), [today]);
   const todayTodos = useMemo(() => todosByDate[todayKey] ?? [], [todosByDate, todayKey]);
 
-  const nowReadingBook: NowReadingBook = useMemo(
-    () => ({
-      title: "책 제목 한 줄",
-      author: "저자 이름",
-      progressPercent: 32,
-    }),
+  // ===== category =====
+  const [selectedCategoryId, setSelectedCategoryId] =
+    useState<number>(ALL_CATEGORY_ID);
+
+  const categories = useMemo(
+    () => withAllCategory(mockCategories),
     []
   );
 
-  // ===== widget config =====
+  // ===== posts =====
+  const userPosts = useMemo<PostSummary[]>(() => mockUserPosts, []);
+
+  const filteredPosts = useMemo(() => {
+    if (selectedCategoryId === ALL_CATEGORY_ID) return userPosts;
+    return userPosts.filter((p) => (p.category?.categoryId ?? -1) === selectedCategoryId);
+  }, [userPosts, selectedCategoryId]);
+
+  // ===== widget =====
   const widgets: WidgetConfig[] = useMemo(
     () => [
       // LEFT (mini)
@@ -102,18 +72,18 @@ const UserPage: React.FC = () => {
 
   const widgetData = useMemo(
     () => ({
-      nowReadingBook,
+      nowReadingBook: mockNowReadingBook,
       today,
       weekDays,
       todosByDate,
       todayTodos,
       monthDays,
     }),
-    [nowReadingBook, today, weekDays, todosByDate, todayTodos, monthDays]
+    [today, weekDays, todosByDate, todayTodos, monthDays]
   );
 
   return (
-    <div className="">
+    <div>
       {/* User Header Image */}
       <div className="max-w-5xl mx-auto">
         <div className="bg-gray-100 border border-gray-200 h-48 flex items-center justify-center">
@@ -170,9 +140,11 @@ const UserPage: React.FC = () => {
             {activeTab === "home" ? (
               <WidgetStack side="left" widgets={widgets} data={widgetData} />
             ) : (
-              <div className="bg-white border border-gray-200 p-6 h-40 flex items-center justify-center text-sm text-gray-600">
-                category
-              </div>
+              <CategoryTree
+                categories={categories}
+                selectedCategoryId={selectedCategoryId}
+                onSelect={(c) => setSelectedCategoryId(c.categoryId)}
+              />
             )}
           </div>
 
@@ -195,11 +167,15 @@ const UserPage: React.FC = () => {
                       onClick={() => setActiveTab(t.key)}
                       className={[
                         "relative py-3 transition",
-                        active ? "text-gray-900 font-semibold" : "text-gray-400 hover:text-gray-600",
+                        active
+                          ? "text-gray-900 font-semibold"
+                          : "text-gray-400 hover:text-gray-600",
                       ].join(" ")}
                     >
                       {t.label}
-                      {active && <span className="absolute left-0 -bottom-[1px] h-[2px] w-full bg-gray-900" />}
+                      {active && (
+                        <span className="absolute left-0 -bottom-[1px] h-[2px] w-full bg-gray-900" />
+                      )}
                     </button>
                   );
                 })}
@@ -211,9 +187,15 @@ const UserPage: React.FC = () => {
               {activeTab === "home" ? (
                 <WidgetStack side="right" widgets={widgets} data={widgetData} />
               ) : (
-                <div className="text-gray-500 text-lg text-center">
-                  <PostGrid posts={userPosts as PostSummary[]} gapClassName="gap-4" />
-                </div>
+                <PostGrid
+                  posts={filteredPosts}
+                  gapClassName="gap-4"
+                  emptyText={
+                    selectedCategoryId === ALL_CATEGORY_ID
+                      ? "포스트가 없어여"
+                      : "이 카테고리엔 포스트가 없어여"
+                  }
+                />
               )}
             </div>
           </div>
